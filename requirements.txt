@@ -22,4 +22,6 @@ langchain-google-genai
 
 # NLP sentiment
 transformers
-torch
+torch --index-url https://download.pytorch.org/whl/cpu
+
+sentencepiece
