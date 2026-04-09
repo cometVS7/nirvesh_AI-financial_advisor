@@ -1,0 +1,25 @@
+# Backend API
+fastapi
+uvicorn[standard]
+requests
+pydantic
+python-dotenv
+
+# Data and modeling
+pandas
+numpy
+scikit-learn
+xgboost
+yfinance
+feedparser
+openpyxl
+joblib
+
+# LLM / agent layer
+langchain
+langchain-core
+langchain-google-genai
+
+# NLP sentiment
+transformers
+torch
