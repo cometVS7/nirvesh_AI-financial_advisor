@@ -21,7 +21,5 @@ langchain-core
 langchain-google-genai
 
 # NLP sentiment
-transformers==4.41.2
-torch==2.2.2
 
 sentencepiece
