@@ -22,6 +22,6 @@ langchain-google-genai
 
 # NLP sentiment
 transformers==4.41.2
-torch==2.2.2+cpu --index-url https://download.pytorch.org/whl/cpu
+torch==2.2.2
 
 sentencepiece
