@@ -1,3 +1,6 @@
 # Streamlit frontend
 streamlit
+pandas
 plotly
+requests
+openpyxl
