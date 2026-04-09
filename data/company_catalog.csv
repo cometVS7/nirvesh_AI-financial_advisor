@@ -1,0 +1,269 @@
+company,ticker,sector,is_leader
+HDFC Bank,HDFCBANK.NS,finance and banking,True
+ICICI Bank,ICICIBANK.NS,finance and banking,True
+State Bank of India,SBIN.NS,finance and banking,True
+Axis Bank,AXISBANK.NS,finance and banking,True
+Kotak Mahindra Bank,KOTAKBANK.NS,finance and banking,True
+Bajaj Finance,BAJFINANCE.NS,finance and banking,True
+IndusInd Bank,INDUSINDBK.NS,finance and banking,False
+Bank of Baroda,BANKBARODA.NS,finance and banking,False
+Punjab National Bank,PNB.NS,finance and banking,False
+Federal Bank,FEDERALBNK.NS,finance and banking,False
+IDFC First Bank,IDFCFIRSTB.NS,finance and banking,False
+AU Small Finance Bank,AUBANK.NS,finance and banking,False
+Canara Bank,CANBK.NS,finance and banking,False
+Union Bank of India,UNIONBANK.NS,finance and banking,False
+Indian Bank,INDIANB.NS,finance and banking,False
+Yes Bank,YESBANK.NS,finance and banking,False
+Bandhan Bank,BANDHANBNK.NS,finance and banking,False
+RBL Bank,RBLBANK.NS,finance and banking,False
+Karur Vysya Bank,KARURVYSYA.NS,finance and banking,False
+South Indian Bank,SOUTHBANK.NS,finance and banking,False
+City Union Bank,CUB.NS,finance and banking,False
+IDBI Bank,IDBI.NS,finance and banking,False
+LIC Housing Finance,LICHSGFIN.NS,finance and banking,False
+Cholamandalam Investment,CHOLAFIN.NS,finance and banking,False
+Muthoot Finance,MUTHOOTFIN.NS,finance and banking,False
+Piramal Finance,PIRAMALFIN.NS,finance and banking,False
+Shriram Finance,SHRIRAMFIN.NS,finance and banking,False
+SBI Cards,SBICARD.NS,finance and banking,False
+Rec,RECLTD.NS,finance and banking,False
+Power Finance Corporation,PFC.NS,finance and banking,False
+Maruti Suzuki,MARUTI.NS,automobile,True
+Tata Motors Commercial Vehicles,TMCV.NS,automobile,False
+Tata Motors Passenger Vehicles,TMPV.NS,automobile,True
+Mahindra and Mahindra,M&M.NS,automobile,True
+Bajaj Auto,BAJAJ-AUTO.NS,automobile,True
+Eicher Motors,EICHERMOT.NS,automobile,True
+Hero MotoCorp,HEROMOTOCO.NS,automobile,True
+TVS Motor,TVSMOTOR.NS,automobile,False
+Ashok Leyland,ASHOKLEY.NS,automobile,False
+Samvardhana Motherson,MOTHERSON.NS,automobile,False
+Bosch,BOSCHLTD.NS,automobile,False
+Balkrishna Industries,BALKRISIND.NS,automobile,False
+MRF,MRF.NS,automobile,False
+Apollo Tyres,APOLLOTYRE.NS,automobile,False
+CEAT,CEATLTD.NS,automobile,False
+Exide Industries,EXIDEIND.NS,automobile,False
+Amara Raja Energy & Mobility,ARE&M.NS,automobile,False
+Sona BLW Precision,SONACOMS.NS,automobile,False
+Schaeffler India,SCHAEFFLER.NS,automobile,False
+Endurance Technologies,ENDURANCE.NS,automobile,False
+UNO Minda,UNOMINDA.NS,automobile,False
+Minda Corporation,MINDACORP.NS,automobile,False
+Jamna Auto Industries,JAMNAAUTO.NS,automobile,False
+Craftsman Automation,CRAFTSMAN.NS,automobile,False
+JK Tyre,JKTYRE.NS,automobile,False
+Suprajit Engineering,SUPRAJIT.NS,automobile,False
+Varroc Engineering,VARROC.NS,automobile,False
+Gabriel India,GABRIEL.NS,automobile,False
+Pricol,PRICOLLTD.NS,automobile,False
+Force Motors,FORCEMOT.NS,automobile,False
+Hindustan Aeronautics,HAL.NS,defence,True
+Bharat Electronics,BEL.NS,defence,True
+Bharat Dynamics,BDL.NS,defence,True
+Mazagon Dock,MAZDOCK.NS,defence,True
+Cochin Shipyard,COCHINSHIP.NS,defence,True
+Data Patterns,DATAPATTNS.NS,defence,True
+Paras Defence,PARAS.NS,defence,False
+Astra Microwave,ASTRAMICRO.NS,defence,False
+BEML,BEML.NS,defence,False
+Garden Reach Shipbuilders,GRSE.NS,defence,False
+MTAR Technologies,MTARTECH.NS,defence,False
+ideaForge Technology,IDEAFORGE.NS,defence,False
+Taneja Aerospace,TAALENT.NS,defence,False
+Premier Explosives,PREMEXPLN.NS,defence,False
+Mishra Dhatu Nigam,MIDHANI.NS,defence,False
+Solar Industries,SOLARINDS.NS,defence,False
+Cyient DLM,CYIENTDLM.NS,defence,False
+Unimech Aerospace,UNIMECH.NS,defence,False
+Zen Technologies,ZENTEC.NS,defence,False
+Apollo Micro Systems,APOLLO.NS,defence,False
+Tata Power,TATAPOWER.NS,defence,False
+Larsen and Toubro,LT.NS,defence,False
+Bharat Forge,BHARATFORG.NS,defence,False
+DCX Systems,DCXINDIA.NS,defence,False
+Sika Interplant,SIKA.NS,defence,False
+Krishna Defence,KRISHNADEF.NS,defence,False
+Rossell Techsys,ROSSTECH.NS,defence,False
+Aeron Composites,AERON.NS,defence,False
+TechEra Engineering,TECHERA.NS,defence,False
+VEM Technologies,VEMTECH.NS,defence,False
+TCS,TCS.NS,it and ai,True
+Infosys,INFY.NS,it and ai,True
+HCL Technologies,HCLTECH.NS,it and ai,True
+Wipro,WIPRO.NS,it and ai,True
+Tech Mahindra,TECHM.NS,it and ai,True
+Persistent Systems,PERSISTENT.NS,it and ai,True
+LTIMindtree,LTIM.NS,it and ai,False
+Mphasis,MPHASIS.NS,it and ai,False
+Coforge,COFORGE.NS,it and ai,False
+Oracle Financial Services,OFSS.NS,it and ai,False
+KPIT Technologies,KPITTECH.NS,it and ai,False
+Birlasoft,BSOFT.NS,it and ai,False
+Tata Elxsi,TATAELXSI.NS,it and ai,False
+Cyient,CYIENT.NS,it and ai,False
+Sonata Software,SONATSOFTW.NS,it and ai,False
+Zensar Technologies,ZENSARTECH.NS,it and ai,False
+Happiest Minds,HAPPSTMNDS.NS,it and ai,False
+Tanla Platforms,TANLA.NS,it and ai,False
+Intellect Design,INTELLECT.NS,it and ai,False
+Firstsource Solutions,FSL.NS,it and ai,False
+Nucleus Software,NUCLEUS.NS,it and ai,False
+eClerx Services,ECLERX.NS,it and ai,False
+Syrma SGS,SYRMA.NS,it and ai,False
+Route Mobile,ROUTE.NS,it and ai,False
+Affle India,AFFLE.NS,it and ai,False
+Newgen Software,NEWGEN.NS,it and ai,False
+Saksoft,SAKSOFT.NS,it and ai,False
+Datamatics,DATAMATICS.NS,it and ai,False
+RateGain Travel,RATEGAIN.NS,it and ai,False
+Mastek,MASTEK.NS,it and ai,False
+Reliance Industries,RELIANCE.NS,oil and gas and energy,True
+ONGC,ONGC.NS,oil and gas and energy,True
+Indian Oil,IOC.NS,oil and gas and energy,True
+NTPC,NTPC.NS,oil and gas and energy,True
+Power Grid,POWERGRID.NS,oil and gas and energy,True
+Coal India,COALINDIA.NS,oil and gas and energy,True
+Bharat Petroleum,BPCL.NS,oil and gas and energy,False
+Hindustan Petroleum,HINDPETRO.NS,oil and gas and energy,False
+GAIL,GAIL.NS,oil and gas and energy,False
+Oil India,OIL.NS,oil and gas and energy,False
+Adani Green Energy,ADANIGREEN.NS,oil and gas and energy,False
+Adani Energy Solutions,ADANIENSOL.NS,oil and gas and energy,False
+Torrent Power,TORNTPOWER.NS,oil and gas and energy,False
+JSW Energy,JSWENERGY.NS,oil and gas and energy,False
+SJVN,SJVN.NS,oil and gas and energy,False
+NHPC,NHPC.NS,oil and gas and energy,False
+NLC India,NLCINDIA.NS,oil and gas and energy,False
+Petronet LNG,PETRONET.NS,oil and gas and energy,False
+Gujarat Gas,GUJGASLTD.NS,oil and gas and energy,False
+Mahanagar Gas,MGL.NS,oil and gas and energy,False
+Indraprastha Gas,IGL.NS,oil and gas and energy,False
+Waaree Energies,WAAREEENER.NS,oil and gas and energy,False
+Inox Wind,INOXWIND.NS,oil and gas and energy,False
+Suzlon Energy,SUZLON.NS,oil and gas and energy,False
+CESC,CESC.NS,oil and gas and energy,False
+KPI Green Energy,KPIGREEN.NS,oil and gas and energy,False
+Borosil Renewables,BORORENEW.NS,oil and gas and energy,False
+IEX,IEX.NS,oil and gas and energy,False
+Hindustan Unilever,HINDUNILVR.NS,fmcg,True
+ITC,ITC.NS,fmcg,True
+Nestle India,NESTLEIND.NS,fmcg,True
+Britannia,BRITANNIA.NS,fmcg,True
+Dabur,DABUR.NS,fmcg,True
+Godrej Consumer,GODREJCP.NS,fmcg,True
+Tata Consumer,TATACONSUM.NS,fmcg,False
+Marico,MARICO.NS,fmcg,False
+Colgate Palmolive India,COLPAL.NS,fmcg,False
+UBL,UBL.NS,fmcg,False
+United Spirits,UNITDSPR.NS,fmcg,False
+Radico Khaitan,RADICO.NS,fmcg,False
+Emami,EMAMILTD.NS,fmcg,False
+Jyothy Labs,JYOTHYLAB.NS,fmcg,False
+Gillette India,GILLETTE.NS,fmcg,False
+Varun Beverages,VBL.NS,fmcg,False
+Bikaji Foods,BIKAJI.NS,fmcg,False
+Balrampur Chini,BALRAMCHIN.NS,fmcg,False
+KRBL,KRBL.NS,fmcg,False
+Bajaj Consumer Care,BAJAJCON.NS,fmcg,False
+Mrs Bectors Food,BECTORFOOD.NS,fmcg,False
+AWL Agri Business,AWL.NS,fmcg,False
+Zydus Wellness,ZYDUSWELL.NS,fmcg,False
+TTK Prestige,TTKPRESTIG.NS,fmcg,False
+Crompton Consumer,CROMPTON.NS,fmcg,False
+Patanjali Foods,PATANJALI.NS,fmcg,False
+Heritage Foods,HERITGFOOD.NS,fmcg,False
+Sula Vineyards,SULA.NS,fmcg,False
+Eveready Industries,EVEREADY.NS,fmcg,False
+VIP Industries,VIPIND.NS,fmcg,False
+Sun Pharma,SUNPHARMA.NS,healthcare and pharma,True
+Dr Reddy's,DRREDDY.NS,healthcare and pharma,True
+Cipla,CIPLA.NS,healthcare and pharma,True
+Divi's Laboratories,DIVISLAB.NS,healthcare and pharma,True
+Apollo Hospitals,APOLLOHOSP.NS,healthcare and pharma,True
+Lupin,LUPIN.NS,healthcare and pharma,True
+Aurobindo Pharma,AUROPHARMA.NS,healthcare and pharma,False
+Torrent Pharmaceuticals,TORNTPHARM.NS,healthcare and pharma,False
+Mankind Pharma,MANKIND.NS,healthcare and pharma,False
+Alkem Laboratories,ALKEM.NS,healthcare and pharma,False
+Biocon,BIOCON.NS,healthcare and pharma,False
+Max Healthcare,MAXHEALTH.NS,healthcare and pharma,False
+Fortis Healthcare,FORTIS.NS,healthcare and pharma,False
+Glenmark,GLENMARK.NS,healthcare and pharma,False
+Abbott India,ABBOTINDIA.NS,healthcare and pharma,False
+Zydus Lifesciences,ZYDUSLIFE.NS,healthcare and pharma,False
+JB Chemicals,JBCHEPHARM.NS,healthcare and pharma,False
+Ajanta Pharma,AJANTPHARM.NS,healthcare and pharma,False
+Ipca Laboratories,IPCALAB.NS,healthcare and pharma,False
+Syngene International,SYNGENE.NS,healthcare and pharma,False
+Granules India,GRANULES.NS,healthcare and pharma,False
+Pfizer India,PFIZER.NS,healthcare and pharma,False
+Aster DM Healthcare,ASTERDM.NS,healthcare and pharma,False
+Narayana Hrudayalaya,NH.NS,healthcare and pharma,False
+Metropolis Healthcare,METROPOLIS.NS,healthcare and pharma,False
+Laurus Labs,LAURUSLABS.NS,healthcare and pharma,False
+Caplin Point,CAPLIPOINT.NS,healthcare and pharma,False
+Krishna Institute,KIMS.NS,healthcare and pharma,False
+Rainbow Childrens,RAINBOW.NS,healthcare and pharma,False
+Shilpa Medicare,SHILPAMED.NS,healthcare and pharma,False
+KPR Mill,KPRMILL.NS,textile,True
+Trident,TRIDENT.NS,textile,True
+Arvind,ARVIND.NS,textile,True
+Welspun Living,WELSPUNLIV.NS,textile,True
+Vardhman Textiles,VTL.NS,textile,True
+Raymond Lifestyle,RAYMONDLSL.NS,textile,True
+Page Industries,PAGEIND.NS,textile,False
+Aditya Birla Fashion,ABFRL.NS,textile,False
+Lux Industries,LUXIND.NS,textile,False
+Rupa,RUPA.NS,textile,False
+Dollar Industries,DOLLAR.NS,textile,False
+Kitex Garments,KITEX.NS,textile,False
+Alok Industries,ALOKINDS.NS,textile,False
+Gokaldas Exports,GOKEX.NS,textile,False
+Sutlej Textiles,SUTLEJTEX.NS,textile,False
+Nitin Spinners,NITINSPIN.NS,textile,False
+LS Industries,LSIND.NS,textile,False
+Swan Energy,SWANENERGY.NS,textile,False
+Garware Technical Fibres,GARFIBRES.NS,textile,False
+Siyaram Silk Mills,SIYSIL.NS,textile,False
+Indo Count,ICIL.NS,textile,False
+Pearl Global,PGIL.NS,textile,False
+Monte Carlo,MONTECARLO.NS,textile,False
+Donear Industries,DONEAR.NS,textile,False
+RSWM,RSWM.NS,textile,False
+Himatsingka Seide,HIMATSEIDE.NS,textile,False
+Sarla Performance,SARLAPOLY.NS,textile,False
+Sportking India,SPORTKING.NS,textile,False
+Filatex India,FILATEX.NS,textile,False
+Cantabil Retail,CANTABIL.NS,textile,False
+UPL,UPL.NS,agriculture,True
+PI Industries,PIIND.NS,agriculture,True
+Coromandel International,COROMANDEL.NS,agriculture,True
+Rallis India,RALLIS.NS,agriculture,True
+Chambal Fertilisers,CHAMBLFERT.NS,agriculture,True
+Godrej Agrovet,GODREJAGRO.NS,agriculture,True
+Gujarat State Fertilizers,GSFC.NS,agriculture,False
+Gujarat Narmada Valley Fert,GNFC.NS,agriculture,False
+Deepak Fertilisers,DEEPAKFERT.NS,agriculture,False
+National Fertilizers,NFL.NS,agriculture,False
+Rashtriya Chemicals,RCF.NS,agriculture,False
+Paradeep Phosphates,PARADEEP.NS,agriculture,False
+Kaveri Seed,KSCL.NS,agriculture,False
+Dhanuka Agritech,DHANUKA.NS,agriculture,False
+Sharda Cropchem,SHARDACROP.NS,agriculture,False
+Bayer Cropsciences,BAYERCROP.NS,agriculture,False
+Insecticides India,INSECTICID.NS,agriculture,False
+Best Agrolife,BESTAGRO.NS,agriculture,False
+Jubilant Ingrevia,JUBLINGREA.NS,agriculture,False
+Fertilizers and Chemicals Travancore,FACT.NS,agriculture,False
+DCM Shriram,DCMSHRIRAM.NS,agriculture,False
+Avanti Feeds,AVANTIFEED.NS,agriculture,False
+Astec LifeSciences,ASTEC.NS,agriculture,False
+Heranba Industries,HERANBA.NS,agriculture,False
+Mangalam Seeds,MANGALAM.NS,agriculture,False
+NACL Industries,NACLIND.NS,agriculture,False
+JK Agri Genetics,JKAGRI.NS,agriculture,False
+ARCL Organics,ARCL.NS,agriculture,False
+Agro Tech Foods,ATFL.NS,agriculture,False
+Vikas Ecotech,VIKASECO.NS,agriculture,False
