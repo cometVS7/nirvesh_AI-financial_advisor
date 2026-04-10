@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-API_BASE = "nirveshai-financialadvisor-production.up.railway.app"
+API_BASE = "https://nirveshai-financialadvisor-production.up.railway.app"
 
 st.set_page_config(page_title="NIRVESH AI", layout="wide")
 
