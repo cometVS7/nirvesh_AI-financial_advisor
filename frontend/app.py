@@ -561,7 +561,7 @@ st.markdown("---")
 
 with st.sidebar:
     st.header("Input Panel")
-    mode = st.selectbox("Choose Mode", ["📊 Portfolio", "🏢 Sector Analysis", "🏭 Company Analysis", "⚙️ Backtesting"])
+    mode = st.selectbox("Choose Mode", ["Portfolio", "Sector Analysis", "Company Analysis", "Backtesting"])
     sectors = fetch_json("GET", "/sectors")["sectors"]
     st.markdown("---")
 
