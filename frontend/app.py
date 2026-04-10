@@ -225,6 +225,17 @@ def render_cards(cards: list[str]) -> None:
 
 
 def get_logo_data_uri() -> str:
+    if st.session_state.get("logo_bytes"):
+        logo_bytes = st.session_state["logo_bytes"]
+        logo_name = str(st.session_state.get("logo_name", "logo.png")).lower()
+        if logo_name.endswith(".jpg") or logo_name.endswith(".jpeg"):
+            mime = "image/jpeg"
+        elif logo_name.endswith(".webp"):
+            mime = "image/webp"
+        else:
+            mime = "image/png"
+        return f"data:{mime};base64,{base64.b64encode(logo_bytes).decode('utf-8')}"
+        
     local_logo = Path(__file__).parent / "assets" / "company_logo.png"
     if local_logo.exists():
         return f"data:image/png;base64,{base64.b64encode(local_logo.read_bytes()).decode('utf-8')}"
@@ -553,14 +564,6 @@ with st.sidebar:
     mode = st.selectbox("Choose Mode", ["Portfolio", "Sector Analysis", "Company Analysis", "Backtesting"])
     sectors = fetch_json("GET", "/sectors")["sectors"]
     st.markdown("---")
-    st.caption("Branding")
-    uploaded_logo = st.file_uploader("Upload company logo", type=["png", "jpg", "jpeg", "webp"])
-    if uploaded_logo is not None:
-        st.session_state["logo_bytes"] = uploaded_logo.getvalue()
-        st.session_state["logo_name"] = uploaded_logo.name
-    if st.button("Clear uploaded logo"):
-        st.session_state.pop("logo_bytes", None)
-        st.session_state.pop("logo_name", None)
 
 if mode == "Portfolio":
     st.markdown("### Inputs")
