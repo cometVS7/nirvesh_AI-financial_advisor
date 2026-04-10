@@ -6,11 +6,7 @@ from threading import Lock
 from typing import Dict, List
 
 import numpy as np
-
-try:
-    from transformers import pipeline
-except ImportError:  # pragma: no cover
-    pipeline = None
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 class FinBertSentimentAnalyzer:
@@ -25,28 +21,10 @@ class FinBertSentimentAnalyzer:
     def __init__(self) -> None:
         self.positive_words = {"growth", "expansion", "support", "improve", "surge", "strong", "approval", "incentive", "profit", "recovery"}
         self.negative_words = {"risk", "pressure", "decline", "concern", "slowdown", "penalty", "warning", "weak", "loss", "delay"}
-
+        self.llm = ChatGoogleGenerativeAI(model="gemini-pro",google_api_key=os.getenv("GOOGLE_API_KEY"))
+        
     def load_model(self):
-        if os.getenv("ENABLE_FINBERT", "0") != "1":
-            self.__class__._model_load_attempted = True
-            return None
-        if self.__class__._classifier is not None or self.__class__._model_load_attempted or pipeline is None:
-            return self.__class__._classifier
-        with self.__class__._model_lock:
-            if self.__class__._classifier is not None or self.__class__._model_load_attempted:
-                return self.__class__._classifier
-            self.__class__._model_load_attempted = True
-            try:
-                # Local-only load avoids blocking/network failures on restricted environments.
-                self.__class__._classifier = pipeline(
-                    "text-classification",
-                    model="ProsusAI/finbert",
-                    tokenizer="ProsusAI/finbert",
-                    local_files_only=True,
-                )
-            except Exception:
-                self.__class__._classifier = None
-        return self.__class__._classifier
+        return None
 
     def score_articles(self, articles: List[Dict], sector: str, stream_key: str = "default") -> Dict:
         if not articles:
@@ -112,26 +90,38 @@ class FinBertSentimentAnalyzer:
         return result
 
     def _score_text(self, text: str) -> tuple[float, str]:
-        classifier = self.load_model()
-        if classifier is not None:
-            try:
-                result = classifier(text[:512])[0]
-                label = result["label"].lower()
-                score = float(result["score"])
-                if "positive" in label:
-                    return score, "positive"
-                if "negative" in label:
-                    return -score, "negative"
-                return 0.0, "neutral"
-            except Exception:
-                pass
-        lowered = text.lower()
-        pos_hits = sum(word in lowered for word in self.positive_words)
-        neg_hits = sum(word in lowered for word in self.negative_words)
-        score = (pos_hits - neg_hits) / max(1, pos_hits + neg_hits + 1)
-        label = "positive" if score > 0.15 else "negative" if score < -0.15 else "neutral"
-        return float(score), label
+        try:
+            prompt = f"""
+            Analyze the sentiment of the following financial news.
 
+            Return ONLY a number between -1 and 1:
+            -1 = very negative
+            0 = neutral
+            1 = very positive
+
+            News:
+            {text[:500]}
+            """
+
+            response = self.llm.invoke(prompt)
+            score = float(response.content.strip())
+
+        except Exception:
+            # fallback (VERY IMPORTANT for stability)
+            lowered = text.lower()
+            pos_hits = sum(word in lowered for word in self.positive_words)
+            neg_hits = sum(word in lowered for word in self.negative_words)
+            score = (pos_hits - neg_hits) / max(1, pos_hits + neg_hits + 1)
+
+        # label logic
+        if score > 0.15:
+            label = "positive"
+        elif score < -0.15:
+            label = "negative"
+        else:
+            label = "neutral"
+        return float(score), label
+        
     def _sector_impact(self, text: str, sector: str, sentiment_score: float) -> float:
         keywords = sector.lower().split()
         text_lower = text.lower()
