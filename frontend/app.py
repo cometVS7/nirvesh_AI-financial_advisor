@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import base64
 import html
 import os
-import random
+from pathlib import Path
 from io import BytesIO
 
 import pandas as pd
@@ -10,19 +11,19 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-API_BASE = "https://nirveshai-financialadvisor-production.up.railway.app"
+API_BASE = os.getenv("STREAMLIT_API_BASE", "http://localhost:8000")
 
-st.set_page_config(page_title="Nirvesh AI", layout="wide")
+st.set_page_config(page_title="NIRVESH AI", layout="wide")
 
 st.markdown(
     """
     <style>
     :root {
-        --bg-1: #121826;
-        --bg-2: #0f172a;
-        --card: rgba(30, 41, 59, 0.92);
-        --text-primary: #E5E7EB;
-        --text-secondary: #9CA3AF;
+        --bg-1: #F8FAFC;
+        --bg-2: #EEF4FF;
+        --card: #FFFFFF;
+        --text-primary: #0F172A;
+        --text-secondary: #475569;
         --accent: #3B5BDB;
         --accent-hover: #5C7CFA;
         --green: #22C55E;
@@ -30,52 +31,66 @@ st.markdown(
         --yellow: #F59E0B;
     }
     .stApp {
-        background: radial-gradient(circle at 15% 10%, rgba(59, 91, 219, 0.14), transparent 35%),
+        background: radial-gradient(circle at 18% 8%, rgba(59, 91, 219, 0.11), transparent 38%),
                     linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 100%);
         color: var(--text-primary);
     }
     .block-container {
         max-width: 1240px;
-        padding-top: 1.2rem;
+        padding-top: 2.8rem;
         padding-bottom: 3rem;
     }
     section[data-testid="stSidebar"] {
-        background: #0f172a;
-        border-right: 1px solid rgba(148, 163, 184, 0.12);
+        background: #F1F5F9;
+        border-right: 1px solid rgba(71, 85, 105, 0.15);
     }
     h1, h2, h3, h4, h5, h6, p, label, div, span {
         color: var(--text-primary);
     }
     .card {
         background: var(--card);
-        border: 1px solid rgba(148, 163, 184, 0.14);
+        border: 1px solid rgba(148, 163, 184, 0.24);
         border-radius: 14px;
         padding: 18px 20px;
-        box-shadow: 0 8px 24px rgba(2, 6, 23, 0.34);
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.09);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 14px 30px rgba(2, 6, 23, 0.42);
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.14);
     }
     .highlight {
-        border: 1px solid rgba(92, 124, 250, 0.35);
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(59, 91, 219, 0.16));
+        border: 1px solid rgba(92, 124, 250, 0.3);
+        background: linear-gradient(135deg, #FFFFFF, rgba(92, 124, 250, 0.08));
+    }
+    .hero-wrap {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .hero-logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        object-fit: contain;
+        background: #FFFFFF;
+        padding: 6px;
     }
     .hero-title {
-        font-size: 2.35rem;
-        font-weight: 800;
+        font-size: 3.1rem;
+        font-weight: 900;
         letter-spacing: -0.02em;
         line-height: 1.1;
-        background: linear-gradient(90deg, #E5E7EB 0%, #A5B4FC 55%, #5C7CFA 100%);
+        background: linear-gradient(90deg, #0F172A 0%, #1E3A8A 52%, #3B5BDB 100%);
         -webkit-background-clip: text;
         background-clip: text;
         -webkit-text-fill-color: transparent;
     }
     .hero-subtitle {
         margin-top: 10px;
-        color: #CBD5E1;
-        font-size: 1.02rem;
+        color: #334155;
+        font-size: 1.06rem;
     }
     .hero-caption {
         margin-top: 14px;
@@ -89,6 +104,7 @@ st.markdown(
     }
     .mood-positive { color: var(--green); }
     .mood-negative { color: var(--red); }
+    .mood-neutral { color: #1D4ED8; }
     .kpi-label {
         font-size: 0.88rem;
         color: var(--text-secondary);
@@ -103,7 +119,7 @@ st.markdown(
     .kpi-subtext {
         margin-top: 8px;
         font-size: 0.82rem;
-        color: #94A3B8;
+        color: #64748B;
     }
     .pill {
         display: inline-block;
@@ -139,7 +155,7 @@ st.markdown(
     .signal-negative { color: var(--red); }
     div.stButton > button {
         background: var(--accent);
-        color: #E5E7EB;
+        color: #FFFFFF;
         border: none;
         border-radius: 12px;
         font-weight: 600;
@@ -153,7 +169,7 @@ st.markdown(
     div[data-baseweb="select"] > div,
     div[data-baseweb="input"] > div,
     div[data-testid="stNumberInput"] input {
-        background: rgba(30, 41, 59, 0.96);
+        background: #FFFFFF;
         color: var(--text-primary);
     }
     </style>
@@ -208,12 +224,37 @@ def render_cards(cards: list[str]) -> None:
         col.markdown(card, unsafe_allow_html=True)
 
 
+def get_logo_data_uri() -> str:
+    if st.session_state.get("logo_bytes"):
+        logo_bytes = st.session_state["logo_bytes"]
+        logo_name = str(st.session_state.get("logo_name", "logo.png")).lower()
+        if logo_name.endswith(".jpg") or logo_name.endswith(".jpeg"):
+            mime = "image/jpeg"
+        elif logo_name.endswith(".webp"):
+            mime = "image/webp"
+        else:
+            mime = "image/png"
+        return f"data:{mime};base64,{base64.b64encode(logo_bytes).decode('utf-8')}"
+
+    local_logo = Path(__file__).parent / "assets" / "company_logo.png"
+    if local_logo.exists():
+        return f"data:image/png;base64,{base64.b64encode(local_logo.read_bytes()).decode('utf-8')}"
+    return ""
+
+
 def render_hero() -> None:
+    logo_uri = get_logo_data_uri()
+    logo_html = f"<img class='hero-logo' src='{logo_uri}' alt='Company Logo' />" if logo_uri else ""
     st.markdown(
-        """
+        f"""
         <div class="card highlight">
-            <div class="hero-title">📈 Nirvesh AI</div>
-            <div class="hero-subtitle">AI-powered financial intelligence system</div>
+            <div class="hero-wrap">
+                {logo_html}
+                <div>
+                    <div class="hero-title">NIRVESH AI</div>
+                    <div class="hero-subtitle">AI-powered financial intelligence system</div>
+                </div>
+            </div>
             <div class="hero-caption">
                 Real-time signals, horizon-aware forecasts, and contextual stock intelligence in one unified dashboard.
             </div>
@@ -223,32 +264,26 @@ def render_hero() -> None:
     )
 
 
-def render_market_mood(result=None) -> None:
-    import random
-    import streamlit as st
+def render_market_mood(mood_payload: dict | None = None) -> None:
+    mood_payload = mood_payload or {}
+    mood_label = str(mood_payload.get("mood", "Stable Bearish"))
+    trend = str(mood_payload.get("trend", "Bearish")).strip().lower()
+    volatility_state = str(mood_payload.get("volatility_state", "Stable"))
+    as_of_date = str(mood_payload.get("as_of_date", "n/a"))
 
-    # Priority 1: Use real sentiment if available
-    if result and "overall_sentiment_score" in result:
-        mood = round(result["overall_sentiment_score"], 2)
-        st.session_state.market_mood = mood  # update session
-
-    # Priority 2: Use stored session value
-    elif "market_mood" in st.session_state:
-        mood = st.session_state.market_mood
-
-    # Fallback: generate once
+    if trend == "bullish":
+        tone_class = "mood-positive"
+    elif trend == "bearish":
+        tone_class = "mood-negative"
     else:
-        mood = round(random.uniform(-1.5, 1.5), 2)
-        st.session_state.market_mood = mood
-
-    sign = "+" if mood >= 0 else ""
-    tone_class = "mood-positive" if mood >= 0 else "mood-negative"
+        tone_class = "mood-neutral"
 
     st.markdown(
         f"""
         <div class="card">
-            <div class="kpi-label">📊 Market Mood</div>
-            <div class="mood-value {tone_class}">{sign}{mood:.2f}%</div>
+            <div class="kpi-label">Market Mood</div>
+            <div class="mood-value {tone_class}">{html.escape(mood_label)}</div>
+            <div class="kpi-subtext">State: {html.escape(volatility_state)} | As of: {html.escape(as_of_date)}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -263,6 +298,9 @@ def render_recommendation_card(recommendation: str, title: str, subtitle: str, b
     if normalized == "buy":
         value_class = "recommendation-buy"
         label = "BUY"
+    elif normalized == "sell":
+        value_class = "recommendation-avoid"
+        label = "SELL"
     elif normalized == "hold":
         value_class = "recommendation-hold"
         label = "HOLD"
@@ -276,7 +314,7 @@ def render_recommendation_card(recommendation: str, title: str, subtitle: str, b
             <div class="recommendation-value {value_class}">{label}</div>
             <div style="font-size:1.14rem;font-weight:700;">{html.escape(title)}</div>
             <div class="recommendation-meta">{html.escape(subtitle)}</div>
-            <div style="line-height:1.6;color:#CBD5E1;">{html.escape(body)}</div>
+            <div style="line-height:1.7;color:#1E293B;text-align:left;">{html.escape(body).replace("\n", "<br>")}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -303,8 +341,8 @@ def render_ai_insights(insight_text: str) -> None:
     st.markdown(
         f"""
         <div class="card">
-            <div style="font-size:1.08rem;font-weight:700;margin-bottom:10px;">🧠 AI Insights</div>
-            <div style="color:#CBD5E1;line-height:1.7;">{safe}</div>
+            <div style="font-size:1.08rem;font-weight:700;margin-bottom:10px;">AI Insights</div>
+            <div style="color:#1E293B;line-height:1.8;">{safe}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -330,14 +368,14 @@ def style_table(df: pd.DataFrame):
         except Exception:
             return ""
         if v >= 5:
-            return "background-color: rgba(34, 197, 94, 0.40); color: #E5E7EB;"
+            return "background-color: rgba(34, 197, 94, 0.25); color: #0F172A;"
         if v > 0:
-            return "background-color: rgba(34, 197, 94, 0.22); color: #E5E7EB;"
+            return "background-color: rgba(34, 197, 94, 0.14); color: #0F172A;"
         if v <= -5:
-            return "background-color: rgba(239, 68, 68, 0.40); color: #E5E7EB;"
+            return "background-color: rgba(239, 68, 68, 0.24); color: #0F172A;"
         if v < 0:
-            return "background-color: rgba(239, 68, 68, 0.22); color: #E5E7EB;"
-        return "background-color: rgba(148, 163, 184, 0.12); color: #E5E7EB;"
+            return "background-color: rgba(239, 68, 68, 0.14); color: #0F172A;"
+        return "background-color: rgba(148, 163, 184, 0.10); color: #0F172A;"
 
     style_method = "map" if hasattr(styled, "map") else "applymap"
     for column in ["growth_pct", "short_term_signal_pct", "growth_90d"]:
@@ -425,10 +463,10 @@ def recommendation_chart(df: pd.DataFrame, title: str) -> go.Figure:
     figure.update_layout(
         title=title,
         barmode="group",
-        template="plotly_dark",
+        template="plotly_white",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#E5E7EB"),
+        font=dict(color="#0F172A"),
         height=430,
         margin=dict(l=20, r=20, t=60, b=20),
     )
@@ -466,10 +504,10 @@ def company_chart(historical: list[dict], prediction: list[dict]) -> go.Figure:
         title="Historical vs Predicted Price",
         xaxis_title="Date",
         yaxis_title="Price (Rs.)",
-        template="plotly_dark",
+        template="plotly_white",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#E5E7EB"),
+        font=dict(color="#0F172A"),
         height=500,
         margin=dict(l=20, r=20, t=60, b=20),
     )
@@ -502,10 +540,10 @@ def backtest_chart(rows: list[dict]) -> go.Figure:
         title="Backtest: Predicted vs Actual",
         xaxis_title="Date",
         yaxis_title="Price (Rs.)",
-        template="plotly_dark",
+        template="plotly_white",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#E5E7EB"),
+        font=dict(color="#0F172A"),
         height=430,
         margin=dict(l=20, r=20, t=60, b=20),
     )
@@ -514,15 +552,28 @@ def backtest_chart(rows: list[dict]) -> go.Figure:
 
 render_hero()
 st.markdown("")
-render_market_mood()
+try:
+    market_mood_payload = fetch_json("GET", "/market-mood")
+except Exception:
+    market_mood_payload = {"mood": "Stable Bearish", "trend": "Bearish", "volatility_state": "Stable", "as_of_date": "n/a"}
+render_market_mood(market_mood_payload)
 st.markdown("---")
 
 with st.sidebar:
     st.header("Input Panel")
-    mode = st.selectbox("Choose Mode", ["📊 Portfolio", "🏭 Sector Analysis", "🏢 Company Analysis", "🔍 Backtesting"])
+    mode = st.selectbox("Choose Mode", ["Portfolio", "Sector Analysis", "Company Analysis", "Backtesting"])
     sectors = fetch_json("GET", "/sectors")["sectors"]
+    st.markdown("---")
+    st.caption("Branding")
+    uploaded_logo = st.file_uploader("Upload company logo", type=["png", "jpg", "jpeg", "webp"])
+    if uploaded_logo is not None:
+        st.session_state["logo_bytes"] = uploaded_logo.getvalue()
+        st.session_state["logo_name"] = uploaded_logo.name
+    if st.button("Clear uploaded logo"):
+        st.session_state.pop("logo_bytes", None)
+        st.session_state.pop("logo_name", None)
 
-if mode == "📊 Portfolio":
+if mode == "Portfolio":
     st.markdown("### Inputs")
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -544,7 +595,7 @@ if mode == "📊 Portfolio":
             if not effective_sectors:
                 raise RuntimeError("Please select at least one sector before generating the portfolio.")
 
-            with st.spinner("🧠 AI analyzing market signals..."):
+            with st.spinner("AI analyzing market signals..."):
                 result = fetch_json(
                     "POST",
                     "/portfolio",
@@ -563,7 +614,7 @@ if mode == "📊 Portfolio":
                 portfolio_table = prepare_portfolio_table(rows)
                 top_ten = portfolio_table.head(10).copy()
                 st.markdown("---")
-                st.markdown("### 📋 Top 10 Stocks Analysis (Portfolio Recommendation)")
+                st.markdown("### Top 10 Stocks Analysis (Portfolio Recommendation)")
                 st.caption(f"Showing top {len(top_ten)} stocks out of {len(portfolio_table)} recommended picks.")
                 render_data_table(top_ten)
                 download_col1, download_col2 = st.columns(2)
@@ -595,13 +646,13 @@ if mode == "📊 Portfolio":
         except Exception as exc:
             st.error(str(exc))
 
-elif mode == "🏭 Sector Analysis":
+elif mode == "Sector Analysis":
     st.markdown("### Inputs")
     sector = st.selectbox("Sector", sectors)
 
     if st.button("Analyze Sector", type="primary"):
         try:
-            with st.spinner("🧠 AI analyzing market signals..."):
+            with st.spinner("AI analyzing market signals..."):
                 result = fetch_json("POST", "/sector", {"sector": sector})
 
             rows = pd.DataFrame(result["recommendations"])
@@ -657,7 +708,7 @@ elif mode == "🏭 Sector Analysis":
                 render_horizon_label(30)
 
                 st.markdown("---")
-                st.markdown("### 📉 Market Movement & Prediction")
+                st.markdown("### Market Movement & Prediction")
                 st.plotly_chart(
                     recommendation_chart(top_six, "Sector Picks: Current vs 30-Day Prediction"),
                     use_container_width=True,
@@ -667,7 +718,7 @@ elif mode == "🏭 Sector Analysis":
                 render_ai_insights(" ".join(explanation_parts))
 
                 st.markdown("---")
-                st.markdown("### 📋 Recommendation Table")
+                st.markdown("### Recommendation Table")
                 render_data_table(top_six)
                 st.download_button(
                     "Download top_6_sector_analysis.xlsx",
@@ -678,7 +729,7 @@ elif mode == "🏭 Sector Analysis":
         except Exception as exc:
             st.error(str(exc))
 
-elif mode == "🏢 Company Analysis":
+elif mode == "Company Analysis":
     st.markdown("### Inputs")
     col1, col2, col3 = st.columns([2, 1, 1])
     with col1:
@@ -690,7 +741,7 @@ elif mode == "🏢 Company Analysis":
 
     if st.button("Analyze Company", type="primary"):
         try:
-            with st.spinner("🧠 AI analyzing market signals..."):
+            with st.spinner("AI analyzing market signals..."):
                 result = fetch_json(
                     "POST",
                     "/company",
@@ -728,7 +779,7 @@ elif mode == "🏢 Company Analysis":
             render_signal_card(float(insights.get("short_term_signal_pct", 0.0)))
 
             st.markdown("---")
-            st.markdown("### 📉 Market Movement & Prediction")
+            st.markdown("### Market Movement & Prediction")
             st.plotly_chart(company_chart(result["chart"]["historical"], result["chart"]["prediction"]), use_container_width=True)
 
             st.markdown("---")
@@ -744,7 +795,7 @@ elif mode == "🏢 Company Analysis":
             render_ai_insights("\n\n".join(insight_lines))
 
             st.markdown("---")
-            st.markdown("### 📋 Data Table")
+            st.markdown("### Data Table")
             st.caption(
                 f"Current quote source: {quote.get('quote_source', 'unknown')} | "
                 f"Quote time: {quote.get('quote_time', 'n/a')} | "
@@ -778,7 +829,7 @@ else:
 
     if st.button("Run Backtest", type="primary"):
         try:
-            with st.spinner("🧠 AI analyzing market signals..."):
+            with st.spinner("AI analyzing market signals..."):
                 result = fetch_json("POST", "/backtest", {"company_keyword": keyword, "days": days})
 
             info = result["company"]
@@ -788,13 +839,13 @@ else:
                 [
                     metric_card("💰 Current Price", money(float(result["results"][-1]["actual_close"] if result["results"] else 0.0)), "Last actual close"),
                     metric_card("📈 Predicted Price", money(float(result["results"][-1]["predicted_close"] if result["results"] else 0.0)), "Last predicted close"),
-                    metric_card("🚀 Growth %", percent(float(result["summary"]["direction_accuracy"])), "Directional accuracy"),
-                    metric_card("⚠️ Risk", "Backtest", f"{info['company']} ({info['ticker']})"),
+                    metric_card("Price Prediction Accuracy", percent(float(result["summary"].get("average_price_prediction_accuracy", 0.0))), "Average accuracy vs actual close"),
+                    metric_card("Directional Accuracy", percent(float(result["summary"]["direction_accuracy"])), f"{info['company']} ({info['ticker']})"),
                 ]
             )
 
             st.markdown("---")
-            st.markdown("### 📉 Market Movement & Prediction")
+            st.markdown("### Market Movement & Prediction")
             st.plotly_chart(backtest_chart(result["chart"]), use_container_width=True)
 
             st.markdown("---")
@@ -802,11 +853,12 @@ else:
                 f"Backtest summary for {info['company']} ({info['ticker']}): "
                 f"MAE {money(float(result['summary']['mean_absolute_error']))}, "
                 f"MAPE {percent(float(result['summary']['mean_absolute_percentage_error']))}, "
-                f"Direction Accuracy {percent(float(result['summary']['direction_accuracy']))}."
+                f"Direction Accuracy {percent(float(result['summary']['direction_accuracy']))}, "
+                f"Average Price Prediction Accuracy {percent(float(result['summary'].get('average_price_prediction_accuracy', 0.0)))}."
             )
 
             st.markdown("---")
-            st.markdown("### 📋 Data Table")
+            st.markdown("### Data Table")
             backtest_df = pd.DataFrame(result["results"])
             st.dataframe(
                 backtest_df.style.format(
