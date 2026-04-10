@@ -58,6 +58,9 @@ class FinancialAdvisorService:
     def list_sectors(self) -> List[str]:
         return SECTORS
 
+    def market_mood(self) -> Dict:
+        return self.collector.fetch_market_mood_snapshot()
+
     def portfolio_recommendation(
         self,
         budget: float,
@@ -65,10 +68,6 @@ class FinancialAdvisorService:
         holding_period: str,
         selected_sectors: List[str] | None = None,
     ) -> Dict:
-        cache_key = self._portfolio_cache_key(budget, risk_tolerance, holding_period, selected_sectors)
-        cached_response = get_cache(cache_key)
-        if cached_response is not None:
-            return cached_response
         if budget <= 0:
             raise ValueError("Budget must be greater than zero.")
         normalized_risk = risk_tolerance.strip().lower()
@@ -86,8 +85,9 @@ class FinancialAdvisorService:
                     company,
                     budget,
                     holding_period,
-                    prefer_live_data=False,
+                    prefer_live_data=True,
                     use_llm=False,
+                    force_refresh_inputs=True,
                     primary_horizon_days=horizon_days,
                     include_short_term_signal=True,
                 )
@@ -155,14 +155,9 @@ class FinancialAdvisorService:
                 "average_growth_pct": round(sum(item["growth_pct"] for item in recommendations) / max(1, len(recommendations)), 2),
             },
         }
-        set_cache(cache_key, result)
         return result
 
     def sector_analysis(self, sector: str) -> Dict:
-        cache_key = f"sector:{sector}"
-        cached_response = get_cache(cache_key)
-        if cached_response is not None:
-            return cached_response
         if sector not in SECTORS:
             raise ValueError(f"Sector '{sector}' is not supported.")
         analyses = []
@@ -172,8 +167,9 @@ class FinancialAdvisorService:
                 company,
                 100000,
                 "medium term",
-                prefer_live_data=False,
+                prefer_live_data=True,
                 use_llm=False,
+                force_refresh_inputs=True,
                 primary_horizon_days=30,
                 include_sector_trend=True,
             )
@@ -229,28 +225,14 @@ class FinancialAdvisorService:
                 "trend_90d": self._trend_from_growth(average_growth_90d),
             },
         }
-        set_cache(cache_key, result)
         return result
 
     def company_analysis(self, company_keyword: str, total_budget: float | None = None, days: int = 30) -> Dict:
         company = self.collector.resolve_company(company_keyword)
         budget = total_budget or 100000
         horizon_days = self._normalize_company_horizon(days)
-        repeated_result = self._get_repeated_company_result(company["ticker"], budget, horizon_days)
-        if repeated_result is not None:
-            return repeated_result
 
-        prefetch = self._prefetch_realtime_inputs(company, prefer_live_data=True, force_refresh=False)
-        force_refresh = self._should_bypass_company_cache(prefetch["stock_clean"], prefetch["quote"])
-        cache_key = f"company:{company['ticker']}:{round(float(budget), 2)}:{horizon_days}"
-        if not force_refresh:
-            cached_response = get_cache(cache_key)
-            if cached_response is not None:
-                self._remember_company_request(company["ticker"], budget, horizon_days, cached_response)
-                return cached_response
-
-        if force_refresh:
-            prefetch = self._prefetch_realtime_inputs(company, prefer_live_data=True, force_refresh=True)
+        prefetch = self._prefetch_realtime_inputs(company, prefer_live_data=True, force_refresh=True)
 
         analysis = self._analyze_company(
             company,
@@ -323,8 +305,6 @@ class FinancialAdvisorService:
             "chart": {"historical": historical.to_dict(orient="records"), "prediction": analysis["prediction"]["prediction_series"]},
             "excel_file": self._download_payload(export_name),
         }
-        set_cache(cache_key, result)
-        self._remember_company_request(company["ticker"], budget, horizon_days, result)
         return result
 
     def backtest_company(self, company_keyword: str, days: int = 5) -> Dict:
@@ -381,11 +361,14 @@ class FinancialAdvisorService:
             raise ValueError("Backtest could not be computed for the selected company.")
 
         backtest_df = pd.DataFrame(rows)
+        mape = float(backtest_df["percentage_error"].mean())
+        avg_price_prediction_accuracy = max(0.0, 100.0 - mape)
         summary = {
             "days_tested": int(len(backtest_df)),
             "mean_absolute_error": round(float(backtest_df["absolute_error"].mean()), 2),
-            "mean_absolute_percentage_error": round(float(backtest_df["percentage_error"].mean()), 2),
+            "mean_absolute_percentage_error": round(mape, 2),
             "direction_accuracy": round(float(backtest_df["direction_correct"].mean() * 100), 2),
+            "average_price_prediction_accuracy": round(avg_price_prediction_accuracy, 2),
         }
         return {
             "company": company,
@@ -401,13 +384,18 @@ class FinancialAdvisorService:
         holding_period: str,
         prefer_live_data: bool = True,
         use_llm: bool = True,
+        force_refresh_inputs: bool = False,
         prefetched_inputs: Dict | None = None,
         primary_horizon_days: int | None = None,
         include_short_term_signal: bool = False,
         include_sector_trend: bool = False,
     ) -> Dict:
         if prefetched_inputs is None:
-            prefetched_inputs = self._prefetch_realtime_inputs(company, prefer_live_data=prefer_live_data, force_refresh=False)
+            prefetched_inputs = self._prefetch_realtime_inputs(
+                company,
+                prefer_live_data=prefer_live_data,
+                force_refresh=force_refresh_inputs,
+            )
         stock_clean = prefetched_inputs["stock_clean"]
         quote = (
             prefetched_inputs["quote"]
@@ -421,10 +409,42 @@ class FinancialAdvisorService:
                 "provider_attempts": [],
             }
         )
-        news_items = prefetched_inputs["news_items"]
+        raw_news_items = prefetched_inputs["news_items"]
         macro_news_items = prefetched_inputs["macro_news_items"]
-        news_analysis = self.sentiment_engine.score_articles(news_items, company["sector"])
-        macro_news_analysis = self.sentiment_engine.score_articles(macro_news_items, company["sector"])
+        direct_company_news = [item for item in raw_news_items if self._is_direct_company_news(item, company)]
+        effective_news_items = direct_company_news[:]
+        news_source = "direct_company_news"
+        if not effective_news_items:
+            sector_news_items = self.collector.fetch_news(
+                company["sector"],
+                company["sector"],
+                8,
+                force_refresh_inputs,
+            )
+            if sector_news_items:
+                effective_news_items = sector_news_items
+                news_source = "sector_news_fallback"
+            elif macro_news_items:
+                effective_news_items = macro_news_items
+                news_source = "macro_news_fallback"
+            else:
+                effective_news_items = raw_news_items
+                news_source = "direct_company_news"
+
+        news_analysis = self.sentiment_engine.score_articles(
+            effective_news_items,
+            company["sector"],
+            stream_key=f"company:{company['ticker']}",
+        )
+        macro_news_analysis = self.sentiment_engine.score_articles(
+            macro_news_items,
+            company["sector"],
+            stream_key=f"macro:{company['sector']}",
+        )
+        news_analysis["news_source"] = news_source
+        news_analysis["direct_company_news_count"] = len(direct_company_news)
+        news_analysis["effective_news_count"] = len(effective_news_items)
+        news_analysis["used_sector_fallback"] = news_source in {"sector_news_fallback", "macro_news_fallback"}
         sebi_updates = prefetched_inputs["sebi_updates"]
         policy_updates = prefetched_inputs["policy_updates"]
         regulatory_score = self._regulatory_score(sebi_updates)
@@ -473,6 +493,7 @@ class FinancialAdvisorService:
                 "policy_drivers": policy_drivers,
                 "regulatory_drivers": regulatory_drivers,
                 "macro_drivers": macro_drivers,
+                "news_source": news_source,
                 "use_llm": use_llm,
             }
         )
@@ -509,6 +530,7 @@ class FinancialAdvisorService:
         holding_period: str,
         prefer_live_data: bool = True,
         use_llm: bool = True,
+        force_refresh_inputs: bool = False,
         primary_horizon_days: int | None = None,
         include_short_term_signal: bool = False,
         include_sector_trend: bool = False,
@@ -520,6 +542,7 @@ class FinancialAdvisorService:
                 holding_period,
                 prefer_live_data=prefer_live_data,
                 use_llm=use_llm,
+                force_refresh_inputs=force_refresh_inputs,
                 primary_horizon_days=primary_horizon_days,
                 include_short_term_signal=include_short_term_signal,
                 include_sector_trend=include_sector_trend,
@@ -837,6 +860,22 @@ class FinancialAdvisorService:
         ordered = sorted(driver_scores.items(), key=lambda pair: pair[1], reverse=True)
         return [{"label": label, "source": source, "count": count} for label, count in ordered[:4]]
 
+    def _is_direct_company_news(self, article: Dict, company: Dict) -> bool:
+        text = f"{article.get('title', '')} {article.get('summary', '')}".lower()
+        if not text.strip():
+            return False
+        company_name = str(company.get("company", "")).strip().lower()
+        ticker = str(company.get("ticker", "")).strip().lower().replace(".ns", "")
+        if company_name and company_name in text:
+            return True
+        if ticker and ticker in text:
+            return True
+        keywords = [token for token in company_name.replace("&", " ").replace("-", " ").split() if len(token) >= 4]
+        if not keywords:
+            return False
+        matches = sum(1 for token in keywords if token in text)
+        return matches >= 2
+
     def _export_to_excel(self, prefix: str, rows: List[Dict]) -> str:
         filename = f"{prefix}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xlsx"
         pd.DataFrame(rows).to_excel(settings.outputs_dir / filename, index=False)
@@ -866,7 +905,13 @@ class FinancialAdvisorService:
         return round(score / max(1, min(6, len(policies))), 4)
 
     def _allocation_pct(self, prediction: Dict, recommendation: str) -> float:
-        base = 4.0 if recommendation == "avoid" else 7.5 if recommendation == "hold" else 10.0
+        normalized = str(recommendation).strip().lower()
+        if normalized in {"sell", "avoid"}:
+            base = 3.0
+        elif normalized == "hold":
+            base = 7.5
+        else:
+            base = 10.0
         adjustment = 2.0 if prediction["risk_level"] == "low" else 0.0 if prediction["risk_level"] == "mid" else -2.5
         return round(max(2.5, min(15.0, base + adjustment)), 2)
 

@@ -30,6 +30,14 @@ def sectors() -> dict:
     return {"sectors": service.list_sectors()}
 
 
+@app.get("/market-mood")
+def market_mood() -> dict:
+    try:
+        return service.market_mood()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @app.post("/portfolio", response_model=PortfolioResponse)
 def portfolio(request: PortfolioRequest) -> dict:
     try:

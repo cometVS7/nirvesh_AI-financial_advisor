@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List
 
 import feedparser
@@ -138,11 +138,93 @@ class DataCollector:
         fallback["provider_attempts"] = provider_attempts
         return fallback
 
+    def fetch_market_mood_snapshot(self) -> Dict:
+        cache_path = settings.raw_dir / "market_mood_snapshot.json"
+        cached_payload = None
+        if cache_path.exists():
+            try:
+                cached_payload = json.loads(cache_path.read_text(encoding="utf-8"))
+            except Exception:
+                cached_payload = None
+
+        fallback = cached_payload or {
+            "index_symbol": "^NSEI",
+            "index_name": "NIFTY 50",
+            "mood": "Stable Bearish",
+            "trend": "Bearish",
+            "volatility_state": "Stable",
+            "as_of_date": datetime.utcnow().strftime("%Y-%m-%d"),
+            "source": "cache_unavailable",
+        }
+
+        if yf is None:
+            fallback["source"] = "yfinance_unavailable"
+            return fallback
+
+        try:
+            frame = yf.download(
+                "^NSEI",
+                period="6mo",
+                interval="1d",
+                auto_adjust=True,
+                progress=False,
+                threads=False,
+            )
+            if frame.empty:
+                return fallback
+
+            if "Close" not in frame.columns:
+                return fallback
+
+            closes = frame["Close"].dropna().tail(90)
+            if len(closes) < 20:
+                return fallback
+
+            last_close = float(closes.iloc[-1])
+            sma20 = float(closes.tail(20).mean())
+            sma50 = float(closes.tail(50).mean()) if len(closes) >= 50 else float(closes.mean())
+            pct_5d = float((closes.iloc[-1] / closes.iloc[-6]) - 1) if len(closes) >= 6 else float((closes.iloc[-1] / closes.iloc[0]) - 1)
+            returns_20 = closes.pct_change().dropna().tail(20)
+            vol_20d = float(returns_20.std()) if len(returns_20) else 0.0
+
+            bullish_score = int(last_close >= sma20) + int(sma20 >= sma50) + int(pct_5d >= 0)
+            trend = "Bullish" if bullish_score >= 2 else "Bearish"
+            volatility_state = "Volatile" if vol_20d >= 0.014 else "Stable"
+            mood_label = f"{volatility_state} {trend}"
+
+            as_of = pd.to_datetime(closes.index[-1], errors="coerce")
+            as_of_str = as_of.strftime("%Y-%m-%d") if pd.notna(as_of) else datetime.utcnow().strftime("%Y-%m-%d")
+
+            payload = {
+                "index_symbol": "^NSEI",
+                "index_name": "NIFTY 50",
+                "mood": mood_label,
+                "trend": trend,
+                "volatility_state": volatility_state,
+                "as_of_date": as_of_str,
+                "source": "yfinance_daily",
+            }
+            try:
+                cache_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            except Exception:
+                pass
+            return payload
+        except Exception:
+            return fallback
+
     def fetch_news(self, company: str, sector: str, limit: int = 8, force_refresh: bool = False) -> List[Dict]:
         cache_path = settings.news_cache_dir / f"{company.lower().replace(' ', '_')}.json"
         cached = self._load_json_cache(cache_path)
-        if not force_refresh and cached is not None and self._is_cache_fresh(cache_path, timedelta(hours=NEWS_REFRESH_HOURS)):
-            return cached
+        if cached is not None and not force_refresh:
+            fresh_articles = self._download_news(company, sector, min(limit, 3))
+            if fresh_articles:
+                latest_cached = self._latest_published(cached)
+                if any(self._parse_datetime(article.get("published")) > latest_cached for article in fresh_articles if article.get("published")):
+                    merged = self._merge_articles(fresh_articles + cached, limit)
+                    cache_path.write_text(json.dumps(merged, indent=2), encoding="utf-8")
+                    return merged
+            if self._is_cache_fresh(cache_path, timedelta(hours=NEWS_REFRESH_HOURS)):
+                return cached
         articles = self._download_news(company, sector, min(limit, 8))
         if articles:
             cache_path.write_text(json.dumps(articles, indent=2), encoding="utf-8")
@@ -152,8 +234,16 @@ class DataCollector:
     def fetch_macro_news(self, sector: str, limit: int = 8, force_refresh: bool = False) -> List[Dict]:
         cache_path = settings.news_cache_dir / f"macro_{sector.replace(' ', '_')}.json"
         cached = self._load_json_cache(cache_path)
-        if not force_refresh and cached is not None and self._is_cache_fresh(cache_path, timedelta(hours=NEWS_REFRESH_HOURS)):
-            return cached
+        if cached is not None and not force_refresh:
+            fresh_articles = self._download_macro_news(sector, min(limit, 3))
+            if fresh_articles:
+                latest_cached = self._latest_published(cached)
+                if any(self._parse_datetime(article.get("published")) > latest_cached for article in fresh_articles if article.get("published")):
+                    merged = self._merge_articles(fresh_articles + cached, limit)
+                    cache_path.write_text(json.dumps(merged, indent=2), encoding="utf-8")
+                    return merged
+            if self._is_cache_fresh(cache_path, timedelta(hours=NEWS_REFRESH_HOURS)):
+                return cached
         articles = self._download_macro_news(sector, min(limit, 8))
         if articles:
             cache_path.write_text(json.dumps(articles, indent=2), encoding="utf-8")
@@ -208,6 +298,37 @@ class DataCollector:
             return json.loads(path.read_text(encoding="utf-8"))
         except Exception:
             return None
+
+    def _parse_datetime(self, value: str | None) -> datetime:
+        if not value:
+            return datetime.min
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is not None:
+                parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+            return parsed
+        except Exception:
+            try:
+                return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S")
+            except Exception:
+                return datetime.min
+
+    def _latest_published(self, articles: List[Dict]) -> datetime:
+        dates = [self._parse_datetime(article.get("published")) for article in articles if article.get("published")]
+        return max(dates) if dates else datetime.min
+
+    def _merge_articles(self, articles: List[Dict], limit: int) -> List[Dict]:
+        seen = set()
+        merged = []
+        for article in sorted(articles, key=lambda item: self._parse_datetime(item.get("published")), reverse=True):
+            key = (article.get("title", "").strip(), article.get("published", "").strip())
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(article)
+            if len(merged) >= limit:
+                break
+        return merged
 
     def _load_cached_stock_history(self, cache_path) -> pd.DataFrame | None:
         if not cache_path.exists():
